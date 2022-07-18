@@ -19,6 +19,12 @@ const User = conn.define('user', {
   username: STRING,
   password: STRING,
 });
+const Note = conn.define('note', {
+  text: STRING,
+});
+
+User.hasMany(Note)
+Note.belongsTo(User)
 
 const SALT_ROUNDS = 10;
 
@@ -69,6 +75,12 @@ const syncAndSeed = async () => {
   const [lucy, moe, larry] = await Promise.all(
     credentials.map((credential) => User.create(credential))
   );
+
+  const notes = [ { text: 'hello world'}, { text: 'reminder to buy groceries'}, { text: 'reminder to do laundry'} ];
+  const [note1, note2, note3] = await Promise.all(notes.map( note => Note.create(note)));
+  await lucy.setNotes(note1);
+  await moe.setNotes([note2, note3]);
+
   return {
     users: {
       lucy,
@@ -82,5 +94,6 @@ module.exports = {
   syncAndSeed,
   models: {
     User,
+    Note
   },
 };
