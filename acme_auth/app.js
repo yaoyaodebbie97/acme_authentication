@@ -6,6 +6,17 @@ const {
 } = require("./db");
 const path = require("path");
 
+const requireToken = async (req, res, next) => {
+  try {
+    const token = req.headers.authorization;
+    const user = await User.byToken(token);
+    req.user = user;
+    next();
+  } catch(error) {
+    next(error);
+  }
+};
+
 app.get("/", (req, res) => res.sendFile(path.join(__dirname, "index.html")));
 
 app.post("/api/auth", async (req, res, next) => {
@@ -16,20 +27,18 @@ app.post("/api/auth", async (req, res, next) => {
   }
 });
 
-app.get("/api/auth", async (req, res, next) => {
+app.get("/api/auth", requireToken, async (req, res, next) => {
   try {
-    res.send(await User.byToken(req.headers.authorization));
+    res.send(req.user);
   } catch (ex) {
     next(ex);
   }
 });
 
-app.get("/api/users/:id/notes", async (req, res, next) => {
+app.get("/api/users/:id/notes", requireToken, async (req, res, next) => {
   try {
     // console.log(req.headers)
-    const user = await User.byToken(req.headers.authorization)
-    console.log(user)
-    const userNotes = await User.findAll({ where: { id: user.id} , include: {model: Note}});
+    const userNotes = await User.findAll({ where: { id: req.params.id} , include: {model: Note}});
     res.send(userNotes);
   } catch (ex) {
     next(ex);
